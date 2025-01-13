@@ -1,0 +1,7 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Mozilla\NativeMessagingHosts\z2dlp_host]
+@="D:\\Z-Data\\git\\qt-apps\\yt-2dlp-ext\\native_host\\z2dlp_host.json"
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Google\Chrome\NativeMessagingHosts\z2dlp_host]
+@="D:\\Z-Data\\git\\qt-apps\\yt-2dlp-ext\\native_host\\z2dlp_host.json"

@@ -1,0 +1,62 @@
+{
+  "manifest_version": 2,
+  "name": "z2dlp - x to \"yt-dlp\" URL Fowarder",
+  "version": "1.0.0",
+  "description": "simple extension to forward current tab URL with custom params to `yt-dlp` command",
+  "permissions": [
+    "storage",
+    "tabs",
+    "activeTab",
+    "nativeMessaging"
+  ],
+  "protocol_handlers": [
+    {
+      "protocol": "ext+z2dlp",
+      "name": "YT-DLP Handler",
+      "uriTemplate": "https://localhost/handler?url=%s"
+    }
+  ],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "browser_style": true,
+    "open_in_tab": true
+  },
+  "commands": {
+    "forward-url": {
+      "suggested_key": {
+        "default": "Ctrl+Alt+Y"
+      },
+      "description": "Forward URL"
+    },
+    "forward-url-with-param": {
+      "suggested_key": {
+        "default": "Ctrl+Alt+U"
+      },
+      "description": "Forward URL with parameter"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "z2dlp_ext@zuko.pro",
+      "strict_min_version": "57.0"
+    }
+  },
+  "icons": {
+    "48": "icons/icon-48.png",
+    "96": "icons/icon-96.png",
+    "128": "icons/icon-128.png",
+    "256": "icons/icon-256.png",
+    "512": "icons/icon-512.png",
+    "1024": "icons/icon.png"
+  }
+}

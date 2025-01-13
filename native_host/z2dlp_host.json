@@ -1,0 +1,7 @@
+{
+  "name": "z2dlp_host",
+  "description": "z2dlp Native Messaging Host",
+  "path": "D:\\Z-Data\\git\\qt-apps\\yt-2dlp-ext\\native_host\\z2dlp_host.bat",
+  "type": "stdio",
+  "allowed_extensions": ["z2dlp_ext@zuko.pro"]
+}
