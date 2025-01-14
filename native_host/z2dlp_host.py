@@ -18,10 +18,10 @@ import json
 import struct
 import os
 from pathlib import Path
-
 import subprocess
-from logger import logging
 
+from logger import logging
+from parser import ParamsParser
 
 def get_message():
     """Read a message from stdin and decode it."""
@@ -40,8 +40,15 @@ def encode_message(message_content):
 
 def send_message(encoded_message):
     """Send an encoded message to stdout."""
-    sys.stdout.buffer.write(encoded_message['length'])
-    sys.stdout.buffer.write(encoded_message['content'])
+    if isinstance(encoded_message, dict) and 'length' in encoded_message and 'content' in encoded_message:
+        # Already encoded message
+        sys.stdout.buffer.write(encoded_message['length'])
+        sys.stdout.buffer.write(encoded_message['content'])
+    else:
+        # Raw message that needs encoding
+        encoded = encode_message(encoded_message)
+        sys.stdout.buffer.write(encoded['length'])
+        sys.stdout.buffer.write(encoded['content'])
     sys.stdout.buffer.flush()
 
 def handle_ping():
@@ -96,6 +103,46 @@ def handle_resolve_path(data):
             'path': path if 'path' in locals() else None
         }
 
+def handle_download(data):
+    """Handle download request with params."""
+    try:
+        params = data.get('params', [])
+        if not params:
+            return {'status': 'error', 'message': 'No params provided'}
+            
+        # Convert params to command args
+        args = ParamsParser.parse_params(params)
+        if not args:
+            return {'status': 'error', 'message': 'Failed to parse params'}
+            
+        # Execute yt-dlp command
+        cmd = ['yt-dlp'] + args
+        logging.info(f"Executing command: {cmd}")
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8')
+        
+        response = {
+            'status': 'ok' if result.returncode == 0 else 'error',
+            'stdout': result.stdout,
+            'stderr': result.stderr,
+            'code': result.returncode
+        }
+        
+        if result.stderr:
+            logging.error(f"Command errors: {result.stderr}")
+        else:
+            logging.info(f"Command output: {result.stdout}")
+            
+        return response
+        
+    except Exception as e:
+        logging.error(f"Error handling download: {str(e)}")
+        return {
+            'status': 'error',
+            'message': str(e),
+            'code': -1
+        }
+
 def main():
     logging.info("Native host started")
     
@@ -108,36 +155,24 @@ def main():
                 
             logging.debug(f"Received message: {message}")
             
+            # Handle message based on action
             action = message.get('action')
-            if not action:
-                logging.info(f"Received message: {message}")
-                if 'url' in message:
-                    try:
-                        cmd = ['python', 'parser.py', message['url']]
-                        result = subprocess.run(cmd, capture_output=True, text=True)
-                        logging.info(f"Command output: {result.stdout}")
-                        if result.stderr:
-                            logging.error(f"Command error: {result.stderr}")
-                        send_message({"status": "success"})
-                    except Exception as e:
-                        logging.error(f"Error: {str(e)}")
-                        send_message({"status": "error", "message": str(e)})
-                else:
-                    response = {'status': 'error', 'message': 'No action specified'}
-            elif action == 'ping':
+            if action == 'ping':
                 response = handle_ping()
             elif action == 'resolve_path':
                 response = handle_resolve_path(message)
+            elif action == 'download':
+                response = handle_download(message)
             else:
                 response = {'status': 'error', 'message': f'Unknown action: {action}'}
             
             logging.debug(f"Sending response: {response}")
-            send_message(encode_message(response))
+            send_message(response)  # Send raw response, let send_message handle encoding
             
         except Exception as e:
             logging.error(f"Error processing message: {str(e)}")
             error_response = {'status': 'error', 'message': str(e)}
-            send_message(encode_message(error_response))
+            send_message(error_response)  # Send raw error response
 
 if __name__ == '__main__':
     main() 

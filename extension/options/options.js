@@ -114,6 +114,32 @@ function showNotification(message, type = 'info') {
     alert(message);
 }
 
+const NOTIFICATION_TYPES = ['info', 'success', 'warning', 'error'];
+const AUTO_HIDE_TIMEOUT = 5000; // 5 seconds
+function displayPresetAlert(message, type = 'info') {
+    const alertDiv = document.getElementById('presetSaveStatus');
+    const msgDiv = document.getElementById('presetSaveStatusText');
+    let msgPrefix = '✅';
+    type = NOTIFICATION_TYPES.includes(type) ? type : 'info';
+    if (!alertDiv.classList.contains('hidden')) {
+        alertDiv.classList.add('hidden');
+        window.setTimeout(()=>displayPresetAlert(message, type), 250);
+        return;
+    }
+    alertDiv.classList.remove('hidden');
+    if (type === 'error') {
+        msgPrefix = '❌';
+    }
+    if (type === 'warning') {
+        msgPrefix = '⚠️';
+    }
+    msgDiv.textContent = `${msgPrefix} ${message}`;
+    msgDiv.className = `alert-${type}`;
+    setTimeout(() => {
+        alertDiv.classList.add('hidden');
+    }, AUTO_HIDE_TIMEOUT);
+}
+
 async function saveToStorage(data) {
     try {
         await storage.sync.set(data);
@@ -216,7 +242,7 @@ async function savePresetChanges(element, id) {
     
     if (await saveToStorage(config)) {
         element.querySelector('.save-preset').classList.add('hidden');
-        showNotification('Preset options saved successfully');
+        displayPresetAlert('Preset options saved successfully', 'success');
         updateSelectedPresetIfNeeded(id);
     }
 }
@@ -339,7 +365,7 @@ async function addCustomPreset() {
     if (await saveToStorage(config)) {
         renderPresets();
         populatePresetSelector(config);
-        showNotification('Custom preset added successfully');
+        displayPresetAlert('Custom preset added successfully', 'info');
     }
 }
 
@@ -377,7 +403,7 @@ async function clonePreset(id) {
     if (await saveToStorage(config)) {
         renderPresets();
         populatePresetSelector(config);
-        showNotification('Preset cloned successfully');
+        displayPresetAlert('Preset cloned successfully');
     }
 }
 
@@ -397,7 +423,7 @@ async function deletePreset(id) {
         if (await saveToStorage(config)) {
             renderPresets();
             populatePresetSelector(config);
-            showNotification('Preset deleted successfully');
+            displayPresetAlert('Preset deleted successfully', 'success');
         }
     }
 }
@@ -526,6 +552,9 @@ async function testNativeHostConnection() {
         }
     } catch (error) {
         console.error('Native host test error:', error);
+        if (response){
+            console.log('Native response:', response);
+        }
         showNotification('Native host connection failed: ' + error.message, 'error');
     }
 }
@@ -549,6 +578,7 @@ async function saveConfiguration() {
     config.additionalParams = additionalParams;
     
     // Save output directory separately to local storage
+    debugger
     await saveOutputDirectory(elements.outputDir.value);
     
     if (await saveToStorage(config)) {

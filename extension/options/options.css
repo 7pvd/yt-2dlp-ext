@@ -1,3 +1,19 @@
+/*
+ *             M""""""""`M            dP
+ *             Mmmmmm   .M            88
+ *             MMMMP  .MMM  dP    dP  88  .dP   .d8888b.
+ *             MMP  .MMMMM  88    88  88888"    88'  `88
+ *             M' .MMMMMMM  88.  .88  88  `8b.  88.  .88
+ *             M         M  `88888P'  dP   `YP  `88888P'
+ *             MMMMMMMMMMM    -*-  Created by Zuko  -*-
+ *
+ *             * * * * * * * * * * * * * * * * * * * * *
+ *             * -    - -   F.R.E.E.M.I.N.D   - -    - *
+ *             * -  Copyright © 2025 (Z) Programing  - *
+ *             *    -  -  All Rights Reserved  -  -    *
+ *             * * * * * * * * * * * * * * * * * * * * *
+ */
+
 /* General styles */
 :root {
     --primary-color: #2196F3;
@@ -219,6 +235,65 @@ select:focus {
 .preset-options input[type="checkbox"] {
     margin: 0;
 }
+/* General styles for the alert */
+.alert {
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.alert .alert-icon {
+  margin-right: 10px;
+  font-size: 20px;
+}
+
+/* Warning alert */
+.alert-warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+}
+
+.alert-warning .alert-icon {
+  color: #856404;
+}
+
+/* Success alert */
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.alert-success .alert-icon {
+  color: #155724;
+}
+
+/* Error alert */
+.alert-error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.alert-error .alert-icon {
+  color: #721c24;
+}
+
+/* Info alert */
+.alert-info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+.alert-info .alert-icon {
+  color: #0c5460;
+}
+
 
 /* Selected preset specific styles */
 .selected-preset-content {

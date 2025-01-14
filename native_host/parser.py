@@ -13,73 +13,46 @@
 #              * * * * * * * * * * * * * * * * * * * * *
 
 #
-#
-import sys
-import urllib.parse
-import subprocess
-import logging
+from typing import List, Dict, Any
+from logger import logging
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('../ytdlp_parser.log'),
-        logging.StreamHandler()
-    ]
-)
-
-def parse_url_to_args(url):
-    logging.info(f"Received URL: {url}")
+class ParamsParser:
+    """Parser for handling download parameters"""
     
-    # Remove the scheme part
-    url = url.replace('ext+ytdlp://', '')
-    logging.debug(f"URL after removing scheme: {url}")
+    PARAM_TYPES = {
+        'argument': 'argument',
+        'option': 'option'
+    }
     
-    # Parse the query string
-    parsed = urllib.parse.urlparse(url)
-    params = urllib.parse.parse_qs(parsed.query)
-    logging.debug(f"Parsed parameters: {params}")
-    
-    # Convert params to command line arguments
-    args = []
-    for key, values in params.items():
-        if key == 'url':
-            args.extend(values)
-            logging.debug(f"Added argument: {values}")
-            continue
-        for value in values:
-            args.extend([f'--{key}', value])
-            logging.debug(f"Added argument: --{key} {value}")
-    
-    logging.info(f"Final arguments: {args}")
-    return args
-
-def main():
-    logging.info("Parser started")
-    logging.info(f"Command line arguments: {sys.argv}")
-    
-    if len(sys.argv) < 2:
-        logging.error("No URL provided")
-        sys.exit(1)
-    
-    url = sys.argv[1]
-    args = parse_url_to_args(url)
-    logging.info(args)
-
-    
-    # Construct the command
-    cmd = ['yt-dlp'] + args
-    logging.info(f"Executing command: {cmd}")
-    
-    try:
-        # Execute the command
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        logging.info(f"Command output: {result.stdout}")
-        if result.stderr:
-            logging.error(f"Command errors: {result.stderr}")
-    except Exception as e:
-        logging.error(f"Error executing command: {e}")
-        sys.exit(1)
-
-if __name__ == "__main__":
-    main()
+    @staticmethod
+    def parse_params(params: List[Dict[str, Any]]) -> List[str]:
+        """Convert params array to command line arguments"""
+        args = []
+        
+        for param in params:
+            param_type = param.get('type')
+            value = param.get('value', '')
+            
+            if not value:  # Skip empty values
+                continue
+                
+            if param_type == ParamsParser.PARAM_TYPES['argument']:
+                args.append(value)
+                logging.debug(f"Added argument: {value}")
+                
+            elif param_type == ParamsParser.PARAM_TYPES['option']:
+                name = param.get('name', '')
+                if not name:  # Skip options without names
+                    continue
+                    
+                prefix = '-' if param.get('isShortOption', True) else '--'
+                option = f"{prefix}{name}"
+                
+                args.append(option)
+                if value:  # Add value only if not empty
+                    args.append(value)
+                    
+                logging.debug(f"Added option: {option} {value}")
+                
+        logging.info(f"Final arguments: {args}")
+        return args

@@ -33,40 +33,120 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   }
 });
 
-function handleCommand(command) {
-  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-    if (tabs[0]) {
-      const currentUrl = tabs[0].url;
-      
-      storage.sync.get({
-        urlPrefix: 'ytdlp://call'
-      }).then(items => {
+async function buildDownloadParams(url, config = null) {
+  const paramsManager = new ParamsManager();
+  
+  // Add URL as main argument
+  paramsManager.addArgument(url);
+  
+  if (config) {
+    // Load preset if available
+    if (config.selectedPreset) {
+      const preset = config.customPresets?.[config.selectedPreset] || DEFAULT_PRESETS[config.selectedPreset];
+      if (preset) {
+        const presetOptions = config.presetOptions?.[config.selectedPreset] || preset.defaultOptions || {};
+        paramsManager.fromPreset(preset, presetOptions);
+      }
+    }
+    
+    // Add configuration options
+    paramsManager.fromConfig(config);
+  }
+  
+  return paramsManager.toArray();
+}
 
-        if (command === 'forward-url') {
-          const targetUrl = `${items.urlPrefix}?url=${encodeURIComponent(currentUrl)}`;
-          console.log('QUICK Opening URL:', targetUrl);
+async function handleCommand(command) {
+  try {
+    // Query active tab first
+    const tabs = await chrome.tabs.query({active: true, currentWindow: true});
+    if (!tabs || !tabs[0]) {
+      console.error('No active tab found');
+      return;
+    }
+    
+    const currentUrl = tabs[0].url;
+    const currentTabId = tabs[0].id;
+    
+    if (command === 'forward-url') {
+      // Quick download with default settings
+      const params = await buildDownloadParams(currentUrl);
+      console.log('Quick download params:', params);
+      
+      runtime.sendNativeMessage('z2dlp_host', {
+        action: 'download',
+        params: params
+      }, response => {
+        console.log('Native response:', response);
+      });
+    } 
+    else if (command === 'forward-url-with-param') {
+      // Advanced download with current configuration
+      const config = await storage.sync.get(null);
+      
+      chrome.tabs.sendMessage(currentTabId, {action: "showPrompt"}, async function(response) {
+        if (response && response.userInput) {
+          const params = await buildDownloadParams(currentUrl, {
+            ...config,
+            outputPattern: response.userInput // Override output pattern with user input
+          });
+          
+          console.log('Advanced download params:', params);
+          
           runtime.sendNativeMessage('z2dlp_host', {
-            url: targetUrl
+            action: 'download',
+            params: params
           }, response => {
             console.log('Native response:', response);
           });
-        } 
-        else if (command === 'forward-url-with-param') {
-          chrome.tabs.sendMessage(tabs[0].id, {action: "showPrompt"}, function(response) {
-            if (response && response.userInput) {
-              const targetUrl = `${items.urlPrefix}?url=${encodeURIComponent(currentUrl)}&param1=${encodeURIComponent(response.userInput)}`;
-              console.log('ADV Opening URL with param:', targetUrl);
-              runtime.sendNativeMessage('z2dlp_host', {
-                url: targetUrl
-              }, response => {
-                console.log('Native response:', response);
-              });
-            }
-          });
         }
-      }).catch(error => {
-        console.error('Error getting storage:', error);
       });
     }
-  });
+  } catch (error) {
+    console.error('Error handling command:', error);
+  }
 }
+
+// Default presets (copied from options.js)
+const DEFAULT_PRESETS = {
+    'best': {
+        name: 'Best Quality (Auto)',
+        params: ['-f', 'best'],
+        isBuiltin: true,
+        defaultOptions: {
+            embedThumbnail: false,
+            writeAllThumbnails: false,
+            addMetadata: false
+        }
+    },
+    'bestvideo+bestaudio': {
+        name: 'Best Video + Audio',
+        params: ['-f', 'bestvideo+bestaudio'],
+        isBuiltin: true,
+        defaultOptions: {
+            embedThumbnail: false,
+            writeAllThumbnails: false,
+            addMetadata: false
+        }
+    },
+    'bestvideo': {
+        name: 'Best Video Only',
+        params: ['-f', 'bestvideo'],
+        isBuiltin: true,
+        defaultOptions: {
+            embedThumbnail: false,
+            writeAllThumbnails: false,
+            addMetadata: false
+        }
+    },
+    'bestaudio': {
+        name: 'Best Audio Only',
+        params: ['-f', 'bestaudio'],
+        isBuiltin: true,
+        defaultOptions: {
+            embedThumbnail: false,
+            writeAllThumbnails: false,
+            addMetadata: false
+        }
+    }
+};
