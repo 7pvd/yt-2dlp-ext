@@ -15,16 +15,63 @@
  */
 
 const storage = (typeof browser !== 'undefined' ? browser.storage : chrome.storage);
+
+//BEGIN shortcut setting
+const commandName = 'toggle-feature';
+
+/**
+ * Update the UI: set the value of the shortcut textbox.
+ */
+async function updateUI() {
+  let commands = await browser.commands.getAll();
+  for (let command of commands) {
+    if (command.name === commandName) {
+      document.querySelector('#shortcut').value = command.shortcut;
+    }
+  }
+}
+
+/**
+ * Update the shortcut based on the value in the textbox.
+ */
+async function updateShortcut() {
+  await browser.commands.update({
+    name: commandName,
+    shortcut: document.querySelector('#shortcut').value
+  });
+}
+
+/**
+ * Reset the shortcut and update the textbox.
+ */
+async function resetShortcut() {
+  await browser.commands.reset(commandName);
+  updateUI();
+}
+
+/**
+ * Update the UI when the page loads.
+ */
+document.addEventListener('DOMContentLoaded', updateUI);
+
+/**
+ * Handle update and reset button clicks
+ */
+document.querySelector('#update').addEventListener('click', updateShortcut)
+document.querySelector('#reset').addEventListener('click', resetShortcut)
+//END shortcut setting
+
 const handleSaveDirectory = () => {
   const folderPath = document.getElementById("folderPath").value;
-  chrome.storage.sync.set({ defaultFolder: folderPath }, () => {
+  storage.sync.set({ defaultFolder: folderPath }, () => {
     alert("Default folder saved!");
   });
 }
+
 // Save Params
 document.getElementById("saveParams").addEventListener("click", () => {
   const params = document.getElementById("params").value.split("\n");
-  chrome.storage.sync.set({ params }, () => {
+  storage.sync.set({ params }, () => {
     alert("Params saved!");
   });
 });
@@ -48,45 +95,21 @@ document.getElementById("saveCustomParams").addEventListener("click", () => {
     const value = inputs[i + 1].value;
     if (key) customParams[key] = value;
   }
-  chrome.storage.sync.set({ customParams }, () => {
+  storage.sync.set({ customParams }, () => {
     alert("Custom params saved!");
   });
 });
 
 document.getElementById("saveBtn").addEventListener("click", handleSaveDirectory);
-// dir picker chrome
-document.getElementById("chooseDirectory") && document.getElementById("chooseDirectory").addEventListener("click", async () => {
-  try {
-    const directoryHandle = await window.showDirectoryPicker();
-    const directoryPath = directoryHandle.name;
 
-    // Save directory path or handle (persistent in Chrome only)
-    chrome.storage.sync.set({ defaultDirectory: directoryPath }, () => {
-      document.getElementById("directoryPath").innerText = `Selected: ${directoryPath}`;
-      alert("Default directory saved!");
-    });
-  } catch (error) {
-    console.error("Directory selection cancelled or failed:", error);
-  }
-});
-
-// SUPPORT ALL
-
-// if (window.showDirectoryPicker) {
-//   // Use Directory Picker (Chromium)
-// } else {
-//   // Fallback to manual input or file picker
-// }
-
-// picker firefox
-// TODO: abs path support
+// Directory picker for Firefox
 document.getElementById("directoryPicker").addEventListener("change", (event) => {
   const files = event.target.files;
   console.log(event);
   if (files.length > 0) {
     const directoryPath = files[0].webkitRelativePath.split("/")[0]; // Get folder name
     console.info('picked: ', directoryPath);
-    chrome.storage.sync.set({ defaultDirectory: directoryPath }, () => {
+    storage.sync.set({ defaultDirectory: directoryPath }, () => {
       document.getElementById("directoryPath").innerText = `Selected: ${directoryPath}`;
       alert("Default directory saved!");
     });
@@ -94,7 +117,6 @@ document.getElementById("directoryPicker").addEventListener("change", (event) =>
     console.log("No directory selected");
   }
 });
-
 
 function saveOptions() {
   const urlPrefix = document.getElementById('urlPrefix').value;

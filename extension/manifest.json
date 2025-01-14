@@ -9,25 +9,18 @@
     "activeTab",
     "nativeMessaging"
   ],
-  "protocol_handlers": [
-    {
-      "protocol": "ext+z2dlp",
-      "name": "YT-DLP Handler",
-      "uriTemplate": "https://localhost/handler?url=%s"
-    }
-  ],
   "background": {
-    "scripts": ["background.js"],
+    "scripts": ["background_script.js"],
     "persistent": false
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"]
+      "js": ["content_script.js"]
     }
   ],
   "options_ui": {
-    "page": "options.html",
+    "page": "options/options.html",
     "browser_style": true,
     "open_in_tab": true
   },
@@ -48,7 +41,7 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "z2dlp_ext@zuko.pro",
-      "strict_min_version": "57.0"
+      "strict_min_version": "109.0"
     }
   },
   "icons": {

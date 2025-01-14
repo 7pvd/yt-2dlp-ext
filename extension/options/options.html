@@ -1,0 +1,78 @@
+<!--
+  ~             M""""""""`M            dP
+  ~             Mmmmmm   .M            88
+  ~             MMMMP  .MMM  dP    dP  88  .dP   .d8888b.
+  ~             MMP  .MMMMM  88    88  88888"    88'  `88
+  ~             M' .MMMMMMM  88.  .88  88  `8b.  88.  .88
+  ~             M         M  `88888P'  dP   `YP  `88888P'
+  ~             MMMMMMMMMMM    -*-  Created by Zuko  -*-
+  ~
+  ~             * * * * * * * * * * * * * * * * * * * * *
+  ~             * -    - -   F.R.E.E.M.I.N.D   - -    - *
+  ~             * -  Copyright © 2025 (Z) Programing  - *
+  ~             *    -  -  All Rights Reserved  -  -    *
+  ~             * * * * * * * * * * * * * * * * * * * * *
+  -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="dark light">
+  <title>URL Forwarder Options</title>
+  <style>
+    body {
+      padding: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    input[type="text"] {
+      width: 300px;
+      padding: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <form>
+    <div class="form-group">
+        <label for="urlPrefix">URL Prefix:</label>
+        <input type="text" id="urlPrefix">
+      </div>
+      <div class="form-group">
+        <input type="text" id="folderPath" placeholder="Enter default save folder" />
+        <h3>Choose Default Directory</h3>
+        <input type="file" id="directoryPicker" webkitdirectory directory />
+        <p id="directoryPath">No directory selected</p>
+        <button id="saveBtn">Save</button>
+      </div>
+      <div class="form-group">
+        <h3>Parameters</h3>
+        <textarea id="params" rows="4" cols="50"></textarea>
+        <button id="saveParams">Save Params</button>
+    
+        <h3>Custom Params</h3>
+        <div id="customParams">
+          <input type="text" placeholder="Key" />
+          <input type="text" placeholder="Value" />
+        </div>
+        <button id="addParam">Add Param</button>
+        <button id="saveCustomParams">Save Custom Params</button>
+      </div>
+      <div class="form-group">
+        <label for="shortcut">Keyboard shortcut</label>
+        <input type="text" id="shortcut">
+        <button id="update">Update keyboard shortcut</button>
+        <button id="reset">Reset  keyboard shortcut</button>
+      </div>
+      <div id="status"></div>
+      <button id="save">Save</button>
+  </form>
+  <script src="options.js"></script>
+</body>
+</html> 

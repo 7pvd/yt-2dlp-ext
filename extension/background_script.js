@@ -14,6 +14,8 @@
  *             * * * * * * * * * * * * * * * * * * * * *
  */
 
+// All javascript here will be execute in background.
+
 // Detect browser type and use appropriate API
 const storage = (typeof browser !== 'undefined' ? browser.storage : chrome.storage);
 const runtime = (typeof browser !== 'undefined' ? browser.runtime : chrome.runtime);
@@ -67,4 +69,4 @@ function handleCommand(command) {
       });
     }
   });
-} 
+}

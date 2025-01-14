@@ -14,6 +14,8 @@
  *             * * * * * * * * * * * * * * * * * * * * *
  */
 
+// Will execute after page (TAB) load.
+
 // Listen for keyboard events
 document.addEventListener('keydown', function(e) {
   console.log('Content script keydown:', e);
@@ -34,4 +36,4 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     sendResponse({userInput: userInput});
   }
   return true; // Keep the message channel open for async response
-}); 
+});
