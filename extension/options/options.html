@@ -17,62 +17,162 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="color-scheme" content="dark light">
-  <title>URL Forwarder Options</title>
-  <style>
-    body {
-      padding: 20px;
-    }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    label {
-      display: block;
-      margin-bottom: 5px;
-    }
-    input[type="text"] {
-      width: 300px;
-      padding: 5px;
-    }
-  </style>
+    <meta charset="utf-8">
+    <meta name="color-scheme" content="dark light">
+    <title>z2dlp Extension Configuration</title>
+    <link href="options.css" rel="stylesheet">
 </head>
 <body>
+    <!-- Configuration Page -->
+    <div id="configuration-page" class="container">
+        <h1>z2dlp Extension Configuration</h1>
+        
+        <div class="section">
+            <h2>Output Settings</h2>
+            
+            <div class="form-group">
+                <label for="outputPattern">Output Naming Pattern:</label>
+                <input type="text" id="outputPattern" placeholder="Enter output pattern">
+                <div class="help-text">
+                    Pattern variables for video naming. See <a href="https://github.com/yt-dlp/yt-dlp#output-template" target="_blank">yt-dlp documentation</a> for details.
+                </div>
+            </div>
 
-  <form>
-    <div class="form-group">
-        <label for="urlPrefix">URL Prefix:</label>
-        <input type="text" id="urlPrefix">
-      </div>
-      <div class="form-group">
-        <input type="text" id="folderPath" placeholder="Enter default save folder" />
-        <h3>Choose Default Directory</h3>
-        <input type="file" id="directoryPicker" webkitdirectory directory />
-        <p id="directoryPath">No directory selected</p>
-        <button id="saveBtn">Save</button>
-      </div>
-      <div class="form-group">
-        <h3>Parameters</h3>
-        <textarea id="params" rows="4" cols="50"></textarea>
-        <button id="saveParams">Save Params</button>
-    
-        <h3>Custom Params</h3>
-        <div id="customParams">
-          <input type="text" placeholder="Key" />
-          <input type="text" placeholder="Value" />
+            <div class="form-group">
+                <label for="outputDir">Default Output Directory:</label>
+                <div class="directory-picker">
+                    <input type="text" id="outputDir" placeholder="Enter output directory path">
+                    <button id="browseDir" class="btn">Browse</button>
+                </div>
+                <div class="help-text">
+                    This setting is stored locally and not synced across devices.
+                </div>
+            </div>
         </div>
-        <button id="addParam">Add Param</button>
-        <button id="saveCustomParams">Save Custom Params</button>
-      </div>
-      <div class="form-group">
-        <label for="shortcut">Keyboard shortcut</label>
-        <input type="text" id="shortcut">
-        <button id="update">Update keyboard shortcut</button>
-        <button id="reset">Reset  keyboard shortcut</button>
-      </div>
-      <div id="status"></div>
-      <button id="save">Save</button>
-  </form>
-  <script src="options.js"></script>
+
+        <div class="section">
+            <h2>Download Settings</h2>
+            <div class="form-group">
+                <div class="preset-header">
+                    <label for="selectedPreset">Selected Preset:</label>
+                    <button id="managePresets" class="btn btn-secondary">Manage Presets</button>
+                </div>
+                <select id="selectedPreset" class="preset-selector"></select>
+            </div>
+            
+            <div class="form-group">
+                <label class="small-label">Current Preset Parameters:</label>
+                <div id="selectedPresetOptions" class="preset-options-panel">
+                    <!-- Will be populated based on selected preset -->
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Additional Parameters:</label>
+                <div id="additionalParams" class="params-container">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                <button id="addParam" class="btn btn-secondary">Add Parameter</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Network Tuning</h2>
+            
+            <div class="form-group">
+                <label for="connections">Number of Connections:</label>
+                <input type="number" id="connections" min="1" max="32" value="4">
+                <div class="help-text">Number of simultaneous download connections (-N option)</div>
+            </div>
+
+            <div class="form-group">
+                <label for="speedLimit">Download Speed Limit:</label>
+                <div class="speed-limit-container">
+                    <input type="number" id="speedLimit" min="0">
+                    <select id="speedUnit">
+                        <option value="K">KB/s</option>
+                        <option value="M">MB/s</option>
+                    </select>
+                </div>
+                <div class="help-text">Leave empty for unlimited speed</div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button id="testConnection" class="btn">Test Native Host Communication</button>
+            <button id="resetConfig" class="btn btn-warning">Reset All Configuration</button>
+            <button id="saveConfig" class="btn btn-primary">Save Configuration</button>
+        </div>
+    </div>
+
+    <!-- Preset Manager Page -->
+    <div id="preset-manager-page" class="container hidden">
+        <div class="page-header">
+            <h1>Preset Manager</h1>
+            <button id="backToConfig" class="btn">Back to Configuration</button>
+        </div>
+        
+        <div class="section">
+            <div class="presets-container">
+                <div class="presets-list" id="presetsList">
+                    <!-- Presets will be populated by JavaScript -->
+                </div>
+                <button id="addCustomPreset" class="btn">Add Custom Preset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates -->
+    <template id="preset-template">
+        <div class="preset-item">
+            <div class="preset-header">
+                <span class="preset-name"></span>
+                <div class="preset-actions">
+                    <button class="btn-icon clone-preset" title="Clone preset">📋</button>
+                    <button class="btn-icon save-preset hidden" title="Save changes">💾</button>
+                    <button class="btn-icon delete-preset hidden" title="Delete preset">🗑️</button>
+                </div>
+            </div>
+            <div class="preset-params"></div>
+            <div class="preset-options">
+                <label>
+                    <input type="checkbox" class="embed-thumbnail"> Embed thumbnail
+                </label>
+                <label class="thumbnail-all-versions hidden">
+                    <input type="checkbox" class="write-all-thumbnails"> Download all thumbnail versions
+                </label>
+                <label>
+                    <input type="checkbox" class="add-metadata"> Add metadata
+                </label>
+            </div>
+        </div>
+    </template>
+
+    <template id="selected-preset-template">
+        <div class="selected-preset-content">
+            <div class="preset-params monospace"></div>
+            <div class="preset-options">
+                <label>
+                    <input type="checkbox" class="embed-thumbnail"> Embed thumbnail
+                </label>
+                <label class="thumbnail-all-versions hidden">
+                    <input type="checkbox" class="write-all-thumbnails"> Download all thumbnail versions
+                </label>
+                <label>
+                    <input type="checkbox" class="add-metadata"> Add metadata
+                </label>
+            </div>
+        </div>
+    </template>
+
+    <template id="param-template">
+        <div class="param-item">
+            <input type="text" class="param-key" placeholder="Parameter">
+            <input type="text" class="param-value" placeholder="Value">
+            <button class="btn-icon remove-param" title="Remove parameter">❌</button>
+        </div>
+    </template>
+
+    <script src="options.js"></script>
 </body>
 </html> 

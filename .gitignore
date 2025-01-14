@@ -2,6 +2,7 @@
 web-ext-artifacts
 *.crx
 *.pem
+venv
 ### QML template
 ### QML ###
 # Cached binary representations of QML and JS files

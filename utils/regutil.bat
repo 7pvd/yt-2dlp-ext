@@ -10,15 +10,15 @@ set "TEMP_REG_FILE=%HOST_DIR%\native_messaging_temp.reg"
 :: Replace hardcoded paths in the registry file
 echo Starting update paths in registry file...
 if not defined VIRTUAL_ENV (
-    call "%~dp0..\venv\Scripts\activate.bat"
+    call "%PROJECT_DIR%\venv\Scripts\activate.bat"
     timeout /t 2 /nobreak > nul
 )
 python windows.py
 
-echo Run update ?
+echo Run update registry ?
 pause
 
-echo Uninstalling registry...
+echo Uninstalling old registry first ...
 call reg delete "HKEY_LOCAL_MACHINE\SOFTWARE\Mozilla\NativeMessagingHosts\z2dlp_host" /f
 call reg delete "HKEY_LOCAL_MACHINE\SOFTWARE\Mozilla\NativeMessagingHosts\z2dlp_host" /f
 
