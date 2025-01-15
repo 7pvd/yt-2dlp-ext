@@ -15,8 +15,8 @@
  */
 
 // Constants and utilities
-const storage = (typeof browser !== 'undefined' ? browser.storage : chrome.storage);
-const runtime = (typeof browser !== 'undefined' ? browser.runtime : chrome.runtime);
+const storage = browser.storage;
+const runtime = browser.runtime;
 
 // Use local storage for output directory
 const localStore = storage.local;
@@ -142,7 +142,7 @@ function displayPresetAlert(message, type = 'info') {
 
 async function saveToStorage(data) {
     try {
-        await storage.sync.set(data);
+        await browser.storage.sync.set(data);
         return true;
     } catch (error) {
         console.error('Storage error:', error);
@@ -152,7 +152,7 @@ async function saveToStorage(data) {
 
 async function loadFromStorage() {
     try {
-        const data = await storage.sync.get(DEFAULT_CONFIG);
+        const data = await browser.storage.sync.get(DEFAULT_CONFIG);
         return { ...DEFAULT_CONFIG, ...data };
     } catch (error) {
         console.error('Loading error:', error);
@@ -523,7 +523,7 @@ async function browseDirectory() {
 // Save output directory to local storage
 async function saveOutputDirectory(path) {
     try {
-        await localStore.set({ outputDir: path });
+        await browser.storage.local.set({ outputDir: path });
     } catch (error) {
         console.error('Failed to save output directory:', error);
         showNotification('Failed to save output directory', 'error');
@@ -533,7 +533,7 @@ async function saveOutputDirectory(path) {
 // Load output directory from local storage
 async function loadOutputDirectory() {
     try {
-        const result = await localStore.get({ outputDir: '' });
+        const result = await browser.storage.local.get({ outputDir: '' });
         return result.outputDir;
     } catch (error) {
         console.error('Failed to load output directory:', error);
