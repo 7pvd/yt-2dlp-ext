@@ -552,9 +552,6 @@ async function testNativeHostConnection() {
         }
     } catch (error) {
         console.error('Native host test error:', error);
-        if (response){
-            console.log('Native response:', response);
-        }
         showNotification('Native host connection failed: ' + error.message, 'error');
     }
 }

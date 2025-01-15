@@ -27,13 +27,15 @@
   "commands": {
     "forward-url": {
       "suggested_key": {
-        "default": "Ctrl+Alt+Y"
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
       },
       "description": "Forward URL"
     },
     "forward-url-with-param": {
       "suggested_key": {
-        "default": "Ctrl+Alt+U"
+        "default": "Ctrl+Shift+U",
+        "mac": "Command+Shift+U"
       },
       "description": "Forward URL with parameter"
     }
