@@ -1,7 +1,7 @@
 {
   "name": "z2dlp_host",
   "description": "z2dlp Native Messaging Host (Development)",
-  "path": "z2dlp_host.proxy.exe",
+  "path": "z2dlp_host.bat",
   "type": "stdio",
   "allowed_extensions": ["z2dlp_ext@zuko.pro"],
   "allowed_origins": [
