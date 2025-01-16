@@ -105,7 +105,8 @@ const elements = {
     managePresets: document.getElementById('managePresets'),
     backToConfig: document.getElementById('backToConfig'),
     additionalParams: document.getElementById('additionalParams'),
-    addParam: document.getElementById('addParam')
+    addParam: document.getElementById('addParam'),
+    browseDir: document.getElementById('browseDir'),
 };
 
 // Helper Functions
@@ -458,68 +459,6 @@ function renderAdditionalParams(params) {
     });
 }
 
-// Directory Picker
-async function browseDirectory() {
-    try {
-        if (typeof browser !== 'undefined') {
-            // Firefox approach
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.setAttribute('webkitdirectory', '');
-            input.setAttribute('directory', '');
-            
-            const fileSelected = new Promise((resolve) => {
-                input.addEventListener('change', async (e) => {
-                    if (e.target.files.length > 0) {
-                        const file = e.target.files[0];
-                        // Get relative path first
-                        const relativePath = file.webkitRelativePath.split('/')[0];
-                        
-                        try {
-                            // Ask native host to resolve full path
-                            const response = await runtime.sendNativeMessage('z2dlp_host', {
-                                action: 'resolve_path',
-                                path: relativePath
-                            });
-                            
-                            if (response && response.status === 'ok' && response.fullPath) {
-                                resolve(response.fullPath);
-                            } else {
-                                console.warn('Path resolution failed:', response);
-                                resolve(relativePath); // Fallback to relative path
-                            }
-                        } catch (err) {
-                            console.error('Failed to resolve path:', err);
-                            resolve(relativePath); // Fallback to relative path
-                        }
-                    } else {
-                        resolve(null);
-                    }
-                });
-            });
-            
-            input.click();
-            
-            const path = await fileSelected;
-            if (path) {
-                elements.outputDir.value = path;
-                await saveOutputDirectory(path);
-            }
-        } else {
-            // Chrome approach - use directory picker
-            const dirPicker = window.showDirectoryPicker();
-            if (dirPicker) {
-                const dirHandle = await dirPicker;
-                elements.outputDir.value = dirHandle.name;
-                await saveOutputDirectory(dirHandle.name);
-            }
-        }
-    } catch (error) {
-        console.error('Directory picker error:', error);
-        showNotification('Failed to select directory. You can enter the path manually.', 'error');
-    }
-}
-
 // Save output directory to local storage
 async function saveOutputDirectory(path) {
     try {
@@ -544,8 +483,10 @@ async function loadOutputDirectory() {
 // Native Host Communication Test
 async function testNativeHostConnection() {
     try {
-        const response = await runtime.sendNativeMessage('z2dlp_host', { action: 'ping' });
-        if (response && response.status === 'ok') {
+        const isHostConnected = await testHostConnection();
+        updateUIForHostStatus(isHostConnected);
+        
+        if (isHostConnected) {
             showNotification('Native host connection successful!', 'success');
         } else {
             showNotification('Native host connection failed!', 'error');
@@ -553,6 +494,7 @@ async function testNativeHostConnection() {
     } catch (error) {
         console.error('Native host test error:', error);
         showNotification('Native host connection failed: ' + error.message, 'error');
+        updateUIForHostStatus(false);
     }
 }
 
@@ -614,7 +556,6 @@ async function loadConfiguration() {
 
 // Event Listeners
 function setupEventListeners() {
-    elements.browseDir.addEventListener('click', browseDirectory);
     elements.addCustomPreset.addEventListener('click', addCustomPreset);
     elements.testConnection.addEventListener('click', testNativeHostConnection);
     elements.resetConfig.addEventListener('click', resetConfiguration);
@@ -630,15 +571,88 @@ function setupEventListeners() {
         elements.additionalParams.appendChild(createParamElement());
     });
     
+    // Add browse button handler
+    elements.browseDir.addEventListener('click', handleBrowse);
+
     // Manual directory input
     elements.outputDir.addEventListener('change', async () => {
         await saveOutputDirectory(elements.outputDir.value);
     });
 }
 
+async function testHostConnection() {
+    try {
+        const response = await browser.runtime.sendMessage({action: 'ping'});
+        return response.status === 'ok';
+    } catch {
+        return false;
+    }
+}
+
+function updateUIForHostStatus(isHostConnected) {
+    const browseBtn = document.getElementById('browseDir');
+    const outputDirInput = document.getElementById('outputDir');
+    const existingAlert = document.querySelector('.host-directory-alert');
+    
+    if (!isHostConnected) {
+        browseBtn.style.display = 'none';
+        
+        // Only show alert if it doesn't exist
+        if (!existingAlert) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-info host-directory-alert';
+            alert.textContent = 'If left empty, downloads will be saved in the host launcher directory';
+            outputDirInput.parentNode.insertBefore(alert, outputDirInput);
+        }
+    } else if (existingAlert) {
+        // Remove alert if host is connected
+        existingAlert.remove();
+    }
+}
+
+async function handleBrowse() {
+    const browseBtn = document.getElementById('browseDir');
+    const buttonText = browseBtn.querySelector('.button-text');
+    const spinner = browseBtn.querySelector('.spinner');
+
+    try {
+        // Test host connection first
+        const isHostConnected = await testHostConnection();
+        if (!isHostConnected) {
+            alert('Failed to initialize directory picker.');
+            updateUIForHostStatus(false);
+            return;
+        }
+
+        // Show loading state
+        browseBtn.disabled = true;
+        buttonText.classList.add('hidden');
+        spinner.classList.remove('hidden');
+
+        const response = await browser.runtime.sendMessage({
+            action: 'browse_directory'
+        });
+
+        if (response.status === 'ok' && response.path) {
+            document.getElementById('outputDir').value = response.path;
+            await saveOutputDirectory(response.path);
+        }
+    } catch (error) {
+        console.error('Failed to browse directory:', error);
+        updateUIForHostStatus(false);
+    } finally {
+        // Restore button state
+        browseBtn.disabled = false;
+        buttonText.classList.remove('hidden');
+        spinner.classList.add('hidden');
+    }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadConfiguration();
     setupEventListeners();
-    showPage('config'); // Start with configuration page
+    showPage('config');
+    
+
 }); 
