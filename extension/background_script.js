@@ -21,16 +21,68 @@ const storage = (typeof browser !== 'undefined' ? browser.storage : chrome.stora
 const runtime = (typeof browser !== 'undefined' ? browser.runtime : chrome.runtime);
 
 // Handle keyboard shortcuts from Chrome
+const COMMAND_DELAY = 3000; // 3 seconds delay between commands
+let lastCommandTime = 0;
+let commandQueue = [];
+
+function queueCommand(command) {
+    const now = Date.now();
+    const timeToWait = Math.max(0, lastCommandTime + COMMAND_DELAY - now);
+    
+    // Add command to queue with metadata
+    commandQueue.push({
+        command,
+        scheduledTime: now + timeToWait
+    });
+    
+    // Update badge to show queue length
+    chrome.browserAction.setBadgeText({ text: commandQueue.length > 0 ? commandQueue.length.toString() : '' });
+    chrome.browserAction.setBadgeBackgroundColor({ color: '#4CAF50' });
+    
+    // Schedule command execution
+    setTimeout(() => processNextCommand(), timeToWait);
+}
+
+async function processNextCommand() {
+    if (commandQueue.length === 0) return;
+    
+    const now = Date.now();
+    const nextCommand = commandQueue[0];
+    
+    if (now >= nextCommand.scheduledTime) {
+        commandQueue.shift();
+        lastCommandTime = now;
+        
+        try {
+            await handleCommand(nextCommand.command);
+        } catch (error) {
+            console.error('Command execution failed:', error);
+            // Retry logic
+            if (!nextCommand.retryCount || nextCommand.retryCount < 3) {
+                const retryDelay = 1000 * (nextCommand.retryCount || 0 + 1);
+                commandQueue.unshift({
+                    ...nextCommand,
+                    scheduledTime: now + retryDelay,
+                    retryCount: (nextCommand.retryCount || 0) + 1
+                });
+            }
+        }
+        
+        // Update badge
+        chrome.browserAction.setBadgeText({ text: commandQueue.length > 0 ? commandQueue.length.toString() : '' });
+    }
+}
+
 chrome.commands.onCommand.addListener(function(command) {
-  handleCommand(command);
+    queueCommand(command);
 });
 
 // Handle messages from content script
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  console.log('Received message:', request);
-  if (request.command) {
-    handleCommand(request.command);
-  }
+    console.log('Received message:', request);
+    if (request.command) {
+        queueCommand(request.command);
+    }
 });
 
 async function buildDownloadParams(url, config = null) {

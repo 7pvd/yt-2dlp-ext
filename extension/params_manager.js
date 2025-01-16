@@ -19,6 +19,41 @@ class ParamsManager {
         ARGUMENT: 'argument',
         OPTION: 'option'
     };
+    static REQUIRED_PARAMS = ['f', 'P', 'N', 'o'];
+    static OMIT_WHEN_EMPTY = ['o'];
+
+    static getPresetOptions(preset, options = {}) {
+        const presetParams = [];
+        
+        // Basic preset params
+        if (preset && preset.params) {
+            preset.params.forEach(param => {
+                if (!param.startsWith('-')) return;
+                const isShort = !param.startsWith('--');
+                const name = param.replace(/^-+/, '');
+                presetParams.push({ name, isShort });
+            });
+        }
+
+        // Additional options based on config
+        if (options.embedThumbnail) {
+            presetParams.push({ name: 'embed-thumbnail', isShort: false });
+        }
+        if (options.writeAllThumbnails) {
+            presetParams.push({ name: 'write-all-thumbnails', isShort: false });
+        }
+        if (options.addMetadata) {
+            presetParams.push({ name: 'add-metadata', isShort: false });
+        }
+
+        // Filter out params that should be omitted when empty
+        return presetParams.filter(param => {
+            if (ParamsManager.OMIT_WHEN_EMPTY.includes(param.name)) {
+                return options[param.name] !== undefined && options[param.name] !== '';
+            }
+            return true;
+        });
+    }
 
     constructor() {
         this.params = [];
@@ -45,34 +80,24 @@ class ParamsManager {
     }
 
     fromPreset(preset, options = {}) {
-        if (!preset || !preset.params) return this;
+        if (!preset) return this;
 
-        let currentParam = null;
-        preset.params.forEach(param => {
-            if (param.startsWith('-')) {
-                // Handle options
-                const isShort = !param.startsWith('--');
-                currentParam = param.replace(/^-+/, '');
-            } else if (currentParam) {
-                // Handle option value
-                this.addOption(currentParam, param, isShort);
-                currentParam = null;
-            } else {
-                // Handle arguments
-                this.addArgument(param);
-            }
+        // Get all valid options for this preset
+        const presetOptions = ParamsManager.getPresetOptions(preset, options);
+
+        // Add non-option parameters (arguments)
+        if (preset.params) {
+            preset.params.forEach(param => {
+                if (!param.startsWith('-')) {
+                    this.addArgument(param);
+                }
+            });
+        }
+
+        // Add all options
+        presetOptions.forEach(opt => {
+            this.addOption(opt.name, '', opt.isShort);
         });
-
-        // Handle preset options
-        if (options.embedThumbnail) {
-            this.addOption('embed-thumbnail', '', false);
-        }
-        if (options.writeAllThumbnails) {
-            this.addOption('write-all-thumbnails', '', false);
-        }
-        if (options.addMetadata) {
-            this.addOption('add-metadata', '', false);
-        }
 
         return this;
     }

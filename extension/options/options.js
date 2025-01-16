@@ -45,6 +45,9 @@ const DEFAULT_PRESETS = {
     'best': {
         name: 'Best Quality (Auto)',
         params: ['-f', 'best'],
+        requiredParams: [
+
+        ],
         isBuiltin: true,
         defaultOptions: {
             embedThumbnail: false,
@@ -55,6 +58,9 @@ const DEFAULT_PRESETS = {
     'bestvideo+bestaudio': {
         name: 'Best Video + Audio',
         params: ['-f', 'bestvideo+bestaudio'],
+        requiredParams: [
+
+        ],
         isBuiltin: true,
         defaultOptions: {
             embedThumbnail: false,
@@ -65,6 +71,9 @@ const DEFAULT_PRESETS = {
     'bestvideo': {
         name: 'Best Video Only',
         params: ['-f', 'bestvideo'],
+        requiredParams: [
+
+        ],
         isBuiltin: true,
         defaultOptions: {
             embedThumbnail: false,
@@ -75,6 +84,9 @@ const DEFAULT_PRESETS = {
     'bestaudio': {
         name: 'Best Audio Only',
         params: ['-f', 'bestaudio'],
+        requiredParams: [
+
+        ],
         isBuiltin: true,
         defaultOptions: {
             embedThumbnail: false,
@@ -83,7 +95,6 @@ const DEFAULT_PRESETS = {
         }
     }
 };
-
 const DEFAULT_CONFIG = {
     outputPattern: '',
     outputDir: '',
@@ -95,6 +106,19 @@ const DEFAULT_CONFIG = {
     presetOptions: {}, // Store options for each preset
     additionalParams: [] // Store additional parameters
 };
+function createParam(name, value, type = 'option', hint, extra) {
+    let merge = {};
+    if (!name.startsWith('--') && name.startsWith('-')) {
+        merge.isShortOption = true;
+    }
+    // if (name.startsWith('--')){
+    //     type = 'option';
+    // } else if (name.startsWith('--')) {
+    //
+    // }
+    return Object.assign({ name, value, type, hint,...extra }, merge);
+}
+
 
 // DOM Elements
 const elements = {

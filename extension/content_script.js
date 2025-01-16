@@ -67,17 +67,48 @@ function createDownloadButton() {
     return button;
 }
 
-// Add download button to YouTube page
+// Add download button after owner name
 function addDownloadButton() {
-    const container = document.querySelector(TARGET_BUTTON);
-    if (!container || document.getElementById(BUTTON_ID)) {
-        return;
-    }
+    const ownerName = document.querySelector('#owner-name');
+    if (!ownerName) return;
+
+    const downloadBtn = document.createElement('button');
+    downloadBtn.id = 'z2dlp-download-btn';
+    downloadBtn.className = 'z2dlp-btn';
+    downloadBtn.innerHTML = '⬇️ Download';
     
-    const button = createDownloadButton();
-    container.appendChild(button);
-    console.log('Download button added');
+    // Insert after owner name
+    ownerName.parentNode.insertBefore(downloadBtn, ownerName.nextSibling);
+    
+    downloadBtn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        
+        // Hide button after first click
+        downloadBtn.style.display = 'none';
+        
+        // Send download command
+        chrome.runtime.sendMessage({
+            command: 'forward-url'
+        });
+    });
 }
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    addDownloadButton();
+});
+
+// Also handle dynamic page loads (for SPA)
+const observer = new MutationObserver(function(mutations) {
+    if (!document.querySelector('#z2dlp-download-btn')) {
+        addDownloadButton();
+    }
+});
+
+observer.observe(document.body, {
+    childList: true,
+    subtree: true
+});
 
 // Watch for YouTube navigation
 function watchForYouTubeNavigation() {
