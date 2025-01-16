@@ -1,9 +1,11 @@
 @echo off
-
+setlocal DisableDelayedExpansion
+set "SCRIPT_PATH=%~f0"
 set "START_DIR=%~dp0"
+for %%I in ("%SCRIPT_PATH%") do set "PROJECT_DIR=%%~dpI..\"
 
 :: Check if .git exists in the parent directory
-if not exist "%START_DIR%..\.git" (
+if not exist "%PROJECT_DIR%.git" (
     echo This file is only for development purposes.
     echo It should not be used in production.
     pause
@@ -11,14 +13,14 @@ if not exist "%START_DIR%..\.git" (
 )
 
 :: Check if the virtual environment exists
-if not exist "%~dp0..\venv\Scripts\activate.bat" (
+if not exist "%PROJECT_DIR%venv\Scripts\activate.bat" (
     echo Virtual environment not found. Make sure it's named "venv".
     pause
     exit /b 1
 )
 
 :: Activate the virtual environment
-call "%~dp0..\venv\Scripts\activate.bat"
+call "%PROJECT_DIR%venv\Scripts\activate.bat"
 timeout /t 2 /nobreak > nul
 
 :: Run the Python script

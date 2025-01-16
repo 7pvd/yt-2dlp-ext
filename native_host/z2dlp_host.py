@@ -13,6 +13,7 @@
 #              * * * * * * * * * * * * * * * * * * * * *
 
 #
+#
 import sys
 import json
 import struct
@@ -55,52 +56,32 @@ def handle_ping():
     """Handle ping request to test connection."""
     return {'status': 'ok', 'message': 'Native host is running'}
 
-def handle_resolve_path(data):
-    """Resolve relative path to absolute path."""
+def handle_browse_directory():
+    """Show directory picker dialog and return selected path."""
     try:
-        path = data.get('path')
-        if not path:
-            return {'status': 'error', 'message': 'No path provided'}
+        cmd = ['powershell.exe', '-Command',
+               "Add-Type -AssemblyName System.Windows.Forms; " +
+               "$f = New-Object System.Windows.Forms.FolderBrowserDialog; " +
+               "$f.ShowDialog(); $f.SelectedPath"]
         
-        # Try different methods to resolve the path
-        abs_path = None
+        result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8')
         
-        # Method 1: Direct absolute path resolution
-        test_path = os.path.abspath(path)
-        if os.path.exists(test_path):
-            abs_path = test_path
-        
-        # Method 2: Try from current working directory
-        if not abs_path:
-            test_path = os.path.abspath(os.path.join(os.getcwd(), path))
-            if os.path.exists(test_path):
-                abs_path = test_path
-        
-        # Method 3: Try from user's home directory
-        if not abs_path:
-            test_path = os.path.expanduser(os.path.join('~', path))
-            if os.path.exists(test_path):
-                abs_path = test_path
-        
-        if abs_path:
+        if result.returncode == 0 and result.stdout.strip():
             return {
                 'status': 'ok',
-                'path': path,
-                'fullPath': abs_path
+                'path': result.stdout.strip()
             }
         else:
             return {
-                'status': 'error',
-                'message': f'Could not resolve path: {path}',
-                'path': path
+                'status': 'cancelled',
+                'message': 'No directory selected'
             }
             
     except Exception as e:
-        logging.error(f"Error resolving path: {str(e)}")
+        logging.error(f"Error showing directory picker: {str(e)}")
         return {
             'status': 'error',
-            'message': str(e),
-            'path': path if 'path' in locals() else None
+            'message': str(e)
         }
 
 def handle_download(data):
@@ -159,20 +140,20 @@ def main():
             action = message.get('action')
             if action == 'ping':
                 response = handle_ping()
-            elif action == 'resolve_path':
-                response = handle_resolve_path(message)
+            elif action == 'browse_directory':
+                response = handle_browse_directory()
             elif action == 'download':
                 response = handle_download(message)
             else:
                 response = {'status': 'error', 'message': f'Unknown action: {action}'}
             
             logging.debug(f"Sending response: {response}")
-            send_message(response)  # Send raw response, let send_message handle encoding
+            send_message(response)
             
         except Exception as e:
             logging.error(f"Error processing message: {str(e)}")
             error_response = {'status': 'error', 'message': str(e)}
-            send_message(error_response)  # Send raw error response
+            send_message(error_response)
 
 if __name__ == '__main__':
     main() 
