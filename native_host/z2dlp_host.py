@@ -14,6 +14,7 @@
 
 #
 #
+#
 import sys
 import json
 import struct
@@ -63,19 +64,22 @@ def handle_browse_directory():
                "Add-Type -AssemblyName System.Windows.Forms; " +
                "$f = New-Object System.Windows.Forms.FolderBrowserDialog; " +
                "$f.ShowDialog(); $f.SelectedPath"]
-        
+        logging.info(f"Executing command: {cmd}")
         result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8')
         
         if result.returncode == 0 and result.stdout.strip():
-            return {
-                'status': 'ok',
-                'path': result.stdout.strip()
-            }
-        else:
-            return {
-                'status': 'cancelled',
-                'message': 'No directory selected'
-            }
+            # Clean up PowerShell output by removing 'OK' line and empty lines
+            selected_path = result.stdout.strip().split('\n')[-1].strip()
+            if selected_path:
+                return {
+                    'status': 'ok',
+                    'path': selected_path
+                }
+            
+        return {
+            'status': 'cancelled',
+            'message': 'No directory selected'
+        }
             
     except Exception as e:
         logging.error(f"Error showing directory picker: {str(e)}")

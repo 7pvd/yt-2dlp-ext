@@ -56,55 +56,62 @@ async function buildDownloadParams(url, config = null) {
   return paramsManager.toArray();
 }
 
-async function handleCommand(command) {
-  try {
-    // Query active tab first
-    const tabs = await chrome.tabs.query({active: true, currentWindow: true});
-    if (!tabs || !tabs[0]) {
-      console.error('No active tab found');
-      return;
-    }
-    
-    const currentUrl = tabs[0].url;
-    const currentTabId = tabs[0].id;
-    
-    if (command === 'forward-url') {
-      // Quick download with default settings
-      const params = await buildDownloadParams(currentUrl);
-      console.log('Quick download params:', params);
-      
-      runtime.sendNativeMessage('z2dlp_host', {
-        action: 'download',
-        params: params
-      }, response => {
-        console.log('Native response:', response);
-      });
-    } 
-    else if (command === 'forward-url-with-param') {
-      // Advanced download with current configuration
-      const config = await storage.sync.get(null);
-      
-      chrome.tabs.sendMessage(currentTabId, {action: "showPrompt"}, async function(response) {
-        if (response && response.userInput) {
-          const params = await buildDownloadParams(currentUrl, {
-            ...config,
-            outputPattern: response.userInput // Override output pattern with user input
-          });
-          
-          console.log('Advanced download params:', params);
-          
-          runtime.sendNativeMessage('z2dlp_host', {
-            action: 'download',
-            params: params
-          }, response => {
-            console.log('Native response:', response);
-          });
+// Utility function for native messaging
+async function sendNativeMessage(action, params = null) {
+    try {
+        const message = {
+            action: action
+        };
+        if (params) {
+            message.params = params;
         }
-      });
+        const response = await runtime.sendNativeMessage('z2dlp_host', message);
+        console.log('Native response:', response);
+        return response;
+    } catch (error) {
+        console.error('Native messaging error:', error);
+        throw error;
     }
-  } catch (error) {
-    console.error('Error handling command:', error);
-  }
+}
+
+async function handleCommand(command) {
+    try {
+        // Query active tab first
+        const tabs = await chrome.tabs.query({active: true, currentWindow: true});
+        if (!tabs || !tabs[0]) {
+            console.error('No active tab found');
+            return;
+        }
+        
+        const currentUrl = tabs[0].url;
+        const currentTabId = tabs[0].id;
+        
+        if (command === 'forward-url') {
+            // Quick download with default settings
+            const params = await buildDownloadParams(currentUrl);
+            console.log('Quick download params:', params);
+            
+            await sendNativeMessage('download', params);
+        } 
+        else if (command === 'forward-url-with-param') {
+            // Advanced download with current configuration
+            const config = await storage.sync.get(null);
+            
+            chrome.tabs.sendMessage(currentTabId, {action: "showPrompt"}, async function(response) {
+                if (response && response.userInput) {
+                    const params = await buildDownloadParams(currentUrl, {
+                        ...config,
+                        outputPattern: response.userInput // Override output pattern with user input
+                    });
+                    
+                    console.log('Advanced download params:', params);
+                    await sendNativeMessage('download', params);
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error handling command:', error);
+    }
 }
 
 // Default presets (copied from options.js)

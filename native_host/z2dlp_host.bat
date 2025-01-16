@@ -24,5 +24,5 @@ call "%PROJECT_DIR%venv\Scripts\activate.bat"
 timeout /t 2 /nobreak > nul
 
 :: Run the Python script
-python "z2dlp_host.py" %*
+python "z2dlp_host.py" %* >> l.log
 exit /b

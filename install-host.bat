@@ -279,7 +279,8 @@ if "%DEV_MODE%" == "1" (
     echo Using source files directly from: %APP_DIR%
 )
 
-call :quit_with_timeout 10
+echo Press any key to exit...
+pause >nul
 exit /b 0
 
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

@@ -480,21 +480,66 @@ async function loadOutputDirectory() {
     }
 }
 
-// Native Host Communication Test
-async function testNativeHostConnection() {
+// Utility function for native messaging
+async function sendNativeMessage(action, params = null) {
     try {
+        const message = {
+            action: action
+        };
+        if (params) {
+            message.params = params;
+        }
+        const response = await runtime.sendNativeMessage('z2dlp_host', message);
+        console.log('Native response:', response);
+        return response;
+    } catch (error) {
+        console.error('Native messaging error:', error);
+        throw error;
+    }
+}
+
+async function testHostConnection() {
+    try {
+        const response = await sendNativeMessage('ping');
+        return response && response.status === 'ok';
+    } catch (error) {
+        console.error('Host connection test failed:', error);
+        return false;
+    }
+}
+
+async function handleBrowse() {
+    const browseBtn = document.getElementById('browseDir');
+    const buttonText = browseBtn.querySelector('.button-text');
+    const spinner = browseBtn.querySelector('.spinner');
+
+    try {
+        // Test host connection first
         const isHostConnected = await testHostConnection();
-        updateUIForHostStatus(isHostConnected);
-        
-        if (isHostConnected) {
-            showNotification('Native host connection successful!', 'success');
-        } else {
-            showNotification('Native host connection failed!', 'error');
+        if (!isHostConnected) {
+            alert('Failed to initialize directory picker.');
+            updateUIForHostStatus(false);
+            return;
+        }
+
+        // Show loading state
+        browseBtn.disabled = true;
+        buttonText.classList.add('hidden');
+        spinner.classList.remove('hidden');
+
+        const response = await sendNativeMessage('browse_directory');
+        if (response && response.status === 'ok' && response.path) {
+            document.getElementById('outputDir').value = response.path;
+            await saveOutputDirectory(response.path);
         }
     } catch (error) {
-        console.error('Native host test error:', error);
-        showNotification('Native host connection failed: ' + error.message, 'error');
+        console.error('Failed to browse directory:', error);
         updateUIForHostStatus(false);
+    } finally {
+        // Restore button state
+        browseBtn.disabled = false;
+        buttonText.classList.remove('hidden');
+        spinner.classList.add('hidden');
     }
 }
 
@@ -557,7 +602,16 @@ async function loadConfiguration() {
 // Event Listeners
 function setupEventListeners() {
     elements.addCustomPreset.addEventListener('click', addCustomPreset);
-    elements.testConnection.addEventListener('click', testNativeHostConnection);
+    elements.testConnection.addEventListener('click', async () => {
+        const isHostConnected = await testHostConnection();
+        updateUIForHostStatus(isHostConnected);
+        
+        if (isHostConnected) {
+            showNotification('Native host connection successful!', 'success');
+        } else {
+            showNotification('Native host connection failed!', 'error');
+        }
+    });
     elements.resetConfig.addEventListener('click', resetConfiguration);
     elements.saveConfig.addEventListener('click', saveConfiguration);
     elements.selectedPreset.addEventListener('change', (e) => updateSelectedPresetDisplay(e.target.value));
@@ -580,15 +634,6 @@ function setupEventListeners() {
     });
 }
 
-async function testHostConnection() {
-    try {
-        const response = await browser.runtime.sendMessage({action: 'ping'});
-        return response.status === 'ok';
-    } catch {
-        return false;
-    }
-}
-
 function updateUIForHostStatus(isHostConnected) {
     const browseBtn = document.getElementById('browseDir');
     const outputDirInput = document.getElementById('outputDir');
@@ -607,44 +652,6 @@ function updateUIForHostStatus(isHostConnected) {
     } else if (existingAlert) {
         // Remove alert if host is connected
         existingAlert.remove();
-    }
-}
-
-async function handleBrowse() {
-    const browseBtn = document.getElementById('browseDir');
-    const buttonText = browseBtn.querySelector('.button-text');
-    const spinner = browseBtn.querySelector('.spinner');
-
-    try {
-        // Test host connection first
-        const isHostConnected = await testHostConnection();
-        if (!isHostConnected) {
-            alert('Failed to initialize directory picker.');
-            updateUIForHostStatus(false);
-            return;
-        }
-
-        // Show loading state
-        browseBtn.disabled = true;
-        buttonText.classList.add('hidden');
-        spinner.classList.remove('hidden');
-
-        const response = await browser.runtime.sendMessage({
-            action: 'browse_directory'
-        });
-
-        if (response.status === 'ok' && response.path) {
-            document.getElementById('outputDir').value = response.path;
-            await saveOutputDirectory(response.path);
-        }
-    } catch (error) {
-        console.error('Failed to browse directory:', error);
-        updateUIForHostStatus(false);
-    } finally {
-        // Restore button state
-        browseBtn.disabled = false;
-        buttonText.classList.remove('hidden');
-        spinner.classList.add('hidden');
     }
 }
 
