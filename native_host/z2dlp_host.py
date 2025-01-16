@@ -15,6 +15,7 @@
 #
 #
 #
+#
 import sys
 import json
 import struct
@@ -23,7 +24,30 @@ from pathlib import Path
 import subprocess
 
 from logger import logging
-from parser import ParamsParser
+
+class ParamsParser:
+    """Parser for converting download parameters to yt-dlp arguments."""
+    
+    @staticmethod
+    def parse_params(params):
+        """Convert parameters to yt-dlp command arguments."""
+        args = []
+        for param in params:
+            if not isinstance(param, dict):
+                continue
+                
+            param_type = param.get('type')
+            value = param.get('value')
+            
+            if param_type == 'url':
+                args.append(value)
+            elif param_type == 'format':
+                args.extend(['-f', value])
+            elif param_type == 'output':
+                args.extend(['-o', value])
+            # Add other parameter types as needed
+                
+        return args
 
 def get_message():
     """Read a message from stdin and decode it."""

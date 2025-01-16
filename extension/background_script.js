@@ -76,9 +76,9 @@ async function sendNativeMessage(action, params = null) {
 
 async function handleCommand(command) {
     try {
-        // Query active tab first
-        const tabs = await chrome.tabs.query({active: true, currentWindow: true});
-        if (!tabs || !tabs[0]) {
+        // Query active tab using browser.tabs API
+        const tabs = await browser.tabs.query({active: true, currentWindow: true});
+        if (!tabs || !tabs.length) {
             console.error('No active tab found');
             return;
         }
@@ -97,17 +97,16 @@ async function handleCommand(command) {
             // Advanced download with current configuration
             const config = await storage.sync.get(null);
             
-            chrome.tabs.sendMessage(currentTabId, {action: "showPrompt"}, async function(response) {
-                if (response && response.userInput) {
-                    const params = await buildDownloadParams(currentUrl, {
-                        ...config,
-                        outputPattern: response.userInput // Override output pattern with user input
-                    });
-                    
-                    console.log('Advanced download params:', params);
-                    await sendNativeMessage('download', params);
-                }
-            });
+            const response = await browser.tabs.sendMessage(currentTabId, {action: "showPrompt"});
+            if (response && response.userInput) {
+                const params = await buildDownloadParams(currentUrl, {
+                    ...config,
+                    outputPattern: response.userInput // Override output pattern with user input
+                });
+                
+                console.log('Advanced download params:', params);
+                await sendNativeMessage('download', params);
+            }
         }
     } catch (error) {
         console.error('Error handling command:', error);
@@ -157,3 +156,8 @@ const DEFAULT_PRESETS = {
         }
     }
 };
+
+// Handle browser action click
+browser.browserAction.onClicked.addListener(() => {
+    browser.runtime.openOptionsPage();
+});

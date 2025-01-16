@@ -17,6 +17,14 @@
 // Constants and utilities
 const storage = browser.storage;
 const runtime = browser.runtime;
+const commands = browser.commands;
+
+// Get commands from manifest
+const manifest = runtime.getManifest();
+const SHORTCUT_COMMANDS = Object.entries(manifest.commands).reduce((acc, [id, command]) => {
+    acc[id] = command.description;
+    return acc;
+}, {});
 
 // Use local storage for output directory
 const localStore = storage.local;
@@ -24,7 +32,8 @@ const localStore = storage.local;
 // Page Elements
 const pages = {
     config: document.getElementById('configuration-page'),
-    presetManager: document.getElementById('preset-manager-page')
+    presetManager: document.getElementById('preset-manager-page'),
+    shortcuts: document.getElementById('shortcuts-page')
 };
 
 function showPage(pageId) {
@@ -106,7 +115,6 @@ const elements = {
     backToConfig: document.getElementById('backToConfig'),
     additionalParams: document.getElementById('additionalParams'),
     addParam: document.getElementById('addParam'),
-    browseDir: document.getElementById('browseDir'),
 };
 
 // Helper Functions
@@ -562,7 +570,6 @@ async function saveConfiguration() {
     config.additionalParams = additionalParams;
     
     // Save output directory separately to local storage
-    debugger
     await saveOutputDirectory(elements.outputDir.value);
     
     if (await saveToStorage(config)) {
@@ -619,6 +626,8 @@ function setupEventListeners() {
     // Page navigation
     elements.managePresets.addEventListener('click', () => showPage('presetManager'));
     elements.backToConfig.addEventListener('click', () => showPage('config'));
+    document.getElementById('manageShortcuts').addEventListener('click', () => showPage('shortcuts'));
+    document.getElementById('backFromShortcuts').addEventListener('click', () => showPage('config'));
     
     // Additional parameters
     elements.addParam.addEventListener('click', () => {
@@ -655,11 +664,119 @@ function updateUIForHostStatus(isHostConnected) {
     }
 }
 
+// Add keyboard shortcuts section
+async function updateShortcutUI() {
+    const shortcutsContainer = document.getElementById('shortcuts-list');
+    shortcutsContainer.innerHTML = '';
+    
+    const commands = await browser.commands.getAll();
+    commands.forEach(command => {
+        const row = document.createElement('div');
+        row.className = 'shortcut-row';
+        
+        const label = document.createElement('label');
+        label.textContent = SHORTCUT_COMMANDS[command.name];
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = command.shortcut || 'Not set';
+        input.readOnly = true;
+        input.dataset.command = command.name;
+        input.placeholder = 'Click Update to set shortcut';
+        
+        const updateButton = document.createElement('button');
+        updateButton.className = 'btn btn-secondary';
+        updateButton.textContent = 'Update';
+        updateButton.onclick = () => updateShortcut(command.name);
+        
+        const resetButton = document.createElement('button');
+        resetButton.className = 'btn';
+        resetButton.textContent = 'Reset';
+        resetButton.onclick = () => resetShortcut(command.name);
+        
+        row.appendChild(label);
+        row.appendChild(input);
+        row.appendChild(updateButton);
+        row.appendChild(resetButton);
+        
+        shortcutsContainer.appendChild(row);
+    });
+}
+
+async function updateShortcut(commandName) {
+    try {
+        const input = document.querySelector(`input[data-command="${commandName}"]`);
+        input.value = 'Press shortcut keys...';
+        input.classList.add('recording');
+        
+        const shortcut = await new Promise((resolve) => {
+            const listener = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Convert key combination to string
+                const keys = [];
+                if (e.ctrlKey) keys.push('Ctrl');
+                if (e.shiftKey) keys.push('Shift');
+                if (e.altKey) keys.push('Alt');
+                if (e.metaKey) keys.push('Command');
+                
+                // Only add the key if it's not a modifier
+                if (e.key && !['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
+                    keys.push(e.key.toUpperCase());
+                    
+                    const shortcut = keys.join('+');
+                    document.removeEventListener('keydown', listener);
+                    resolve(shortcut);
+                }
+            };
+            
+            document.addEventListener('keydown', listener);
+        });
+        
+        input.classList.remove('recording');
+        
+        if (shortcut) {
+            try {
+                await browser.commands.update({
+                    name: commandName,
+                    shortcut: shortcut
+                });
+                
+                // Update UI
+                input.value = shortcut;
+                displayPresetAlert('Shortcut updated successfully', 'success');
+            } catch (error) {
+                console.error('Failed to update shortcut:', error);
+                input.value = 'Invalid shortcut';
+                setTimeout(async () => {
+                    input.value = (await browser.commands.getAll())
+                        .find(cmd => cmd.name === commandName)?.shortcut || 'Not set';
+                }, 1000);
+                displayPresetAlert('Invalid shortcut combination', 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Failed to update shortcut:', error);
+        displayPresetAlert('Failed to update shortcut', 'error');
+    }
+}
+
+async function resetShortcut(commandName) {
+    try {
+        await browser.commands.reset(commandName);
+        await updateShortcutUI();
+        displayPresetAlert('Shortcut reset successfully', 'success');
+    } catch (error) {
+        console.error('Failed to reset shortcut:', error);
+        displayPresetAlert('Failed to reset shortcut', 'error');
+    }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadConfiguration();
     setupEventListeners();
+    updateShortcutUI();
     showPage('config');
-    
-
 }); 

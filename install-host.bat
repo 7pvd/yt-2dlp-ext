@@ -1,5 +1,20 @@
 @echo off
 setlocal EnableDelayedExpansion
+
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:: Parse command line arguments
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+set "INSTALL_FOR_ALL_USERS=0"
+set "DEV_MODE=0"
+if "%1" == "/all-users" set "INSTALL_FOR_ALL_USERS=1"
+if "%1" == "/dev" set "DEV_MODE=1"
+if "%2" == "/all-users" set "INSTALL_FOR_ALL_USERS=1"
+if "%2" == "/dev" set "DEV_MODE=1"
+
+call :log "Command line arguments:"
+call :log "  INSTALL_FOR_ALL_USERS: %INSTALL_FOR_ALL_USERS%"
+call :log "  DEV_MODE: %DEV_MODE%"
+
 :: Get the actual script directory even when run as admin
 set "SCRIPT_PATH=%~f0"
 set "START_DIR=%~dp0"
@@ -44,20 +59,6 @@ call :log "  Username: %USERNAME%"
 call :log "  Temp Directory: %TEMP%"
 call :log "  Program Files: %ProgramFiles%"
 call :log "  Local AppData: %LOCALAPPDATA%"
-
-::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-:: Parse command line arguments
-::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-set "INSTALL_FOR_ALL_USERS=0"
-set "DEV_MODE=0"
-if "%1" == "/all-users" set "INSTALL_FOR_ALL_USERS=1"
-if "%1" == "/dev" set "DEV_MODE=1"
-if "%2" == "/all-users" set "INSTALL_FOR_ALL_USERS=1"
-if "%2" == "/dev" set "DEV_MODE=1"
-
-call :log "Command line arguments:"
-call :log "  INSTALL_FOR_ALL_USERS: %INSTALL_FOR_ALL_USERS%"
-call :log "  DEV_MODE: %DEV_MODE%"
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: Check for admin privileges
@@ -211,7 +212,6 @@ if "%DEV_MODE%" == "0" (
     call :log "Copying application files..."
     copy "%START_DIR%\native_host\logger.py" "%APP_DIR%" >> "%LOGFILE%" 2>&1
     copy "%START_DIR%\native_host\z2dlp_host.py" "%APP_DIR%" >> "%LOGFILE%" 2>&1
-    copy "%START_DIR%\native_host\parser.py" "%APP_DIR%" >> "%LOGFILE%" 2>&1
     call :log "Application files copied"
 
     call :log "Creating native messaging host manifest..."

@@ -25,7 +25,10 @@
 <body>
     <!-- Configuration Page -->
     <div id="configuration-page" class="container">
-        <h1>z2dlp Extension Configuration</h1>
+        <div class="page-header">
+            <h1 style="color: var(--primary-color);">z2dlp Extension Configuration</h1>
+            <button id="manageShortcuts" class="btn btn-secondary">Keyboard shortcuts</button>
+        </div>
         
         <div class="section">
             <h2>Output Settings</h2>
@@ -118,13 +121,24 @@
         <div class="section">
             <div class="alert hidden" id="presetSaveStatus"></div>
                 <div class="" id="presetSaveStatusText"></div>
-            </div>
-            <div class="presets-container">
+        </div>
+        <div class="presets-container">
                 <div class="presets-list" id="presetsList">
                     <!-- Presets will be populated by JavaScript -->
                 </div>
                 <button id="addCustomPreset" class="btn">Add Custom Preset</button>
-            </div>
+        </div>
+    </div>
+
+    <!-- Shortcuts Page -->
+    <div id="shortcuts-page" class="container hidden">
+        <div class="page-header">
+            <h1>Keyboard Shortcuts</h1>
+            <button id="backFromShortcuts" class="btn">Back to Configuration</button>
+        </div>
+        
+        <div class="section">
+            <div id="shortcuts-list"></div>
         </div>
     </div>
 

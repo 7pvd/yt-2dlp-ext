@@ -3,7 +3,6 @@ setlocal DisableDelayedExpansion
 set "SCRIPT_PATH=%~f0"
 set "START_DIR=%~dp0"
 for %%I in ("%SCRIPT_PATH%") do set "PROJECT_DIR=%%~dpI..\"
-
 :: Check if .git exists in the parent directory
 if not exist "%PROJECT_DIR%.git" (
     echo This file is only for development purposes.
@@ -21,8 +20,11 @@ if not exist "%PROJECT_DIR%venv\Scripts\activate.bat" (
 
 :: Activate the virtual environment
 call "%PROJECT_DIR%venv\Scripts\activate.bat"
-timeout /t 2 /nobreak > nul
-
+if not defined VIRTUAL_ENV (
+    echo Virtual environment active error.
+    pause
+    exit /b 1
+)
 :: Run the Python script
-python "z2dlp_host.py" %* >> l.log
+python "z2dlp_host.py" %*
 exit /b
