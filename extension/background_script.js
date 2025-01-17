@@ -85,26 +85,40 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     }
 });
 
-async function buildDownloadParams(url, config = null) {
+async function buildDownloadParams(url, config = null, getManager = false) {
   const paramsManager = new ParamsManager();
   
   // Add URL as main argument
   paramsManager.addArgument(url);
   
+  // Get default config if not provided
+  if (!config) {
+    config = await storage.sync.get(null);
+  }
+  
+  // Add required params only if they exist in config
   if (config) {
     // Load preset if available
     if (config.selectedPreset) {
       const preset = config.customPresets?.[config.selectedPreset] || DEFAULT_PRESETS[config.selectedPreset];
       if (preset) {
-        const presetOptions = config.presetOptions?.[config.selectedPreset] || preset.defaultOptions || {};
+        const presetOptions = config.presetOptions?.[config.selectedPreset] || preset.params || {};
         paramsManager.fromPreset(preset, presetOptions);
       }
+    } else {
+      // If no preset, add format option
+      paramsManager.addOption('f', 'best', true);
     }
     
     // Add configuration options
     paramsManager.fromConfig(config);
   }
   
+  if (getManager) {
+    return paramsManager;
+  }
+  console.info('download params', paramsManager.toArray());
+
   return paramsManager.toArray();
 }
 
@@ -137,17 +151,18 @@ async function handleCommand(command) {
         
         const currentUrl = tabs[0].url;
         const currentTabId = tabs[0].id;
-        
+        const config = Object.assign(await storage.sync.get(null), await storage.local.get(null));
         if (command === 'forward-url') {
             // Quick download with default settings
-            const params = await buildDownloadParams(currentUrl);
-            console.log('Quick download params:', params);
+
+            const paramsManager = await buildDownloadParams(currentUrl, config, true);
+            console.log('Quick download params:', paramsManager.toArray());
             
-            await sendNativeMessage('download', params);
+            await sendNativeMessage('download', paramsManager.toArray());
         } 
         else if (command === 'forward-url-with-param') {
             // Advanced download with current configuration
-            const config = await storage.sync.get(null);
+
             
             const response = await browser.tabs.sendMessage(currentTabId, {action: "showPrompt"});
             if (response && response.userInput) {

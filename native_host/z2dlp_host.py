@@ -16,6 +16,7 @@
 #
 #
 #
+#
 import sys
 import json
 import struct
@@ -28,25 +29,57 @@ from logger import logging
 class ParamsParser:
     """Parser for converting download parameters to yt-dlp arguments."""
     
+    PARAM_TYPES = {
+        'argument': 'argument',
+        'option': 'option'
+    }
+    
     @staticmethod
     def parse_params(params):
-        """Convert parameters to yt-dlp command arguments."""
+        """Convert parameters to yt-dlp command arguments.
+        
+        Expected param structure:
+        {
+            'name': str,           # Option name without prefix
+            'value': str,          # Option value or argument value
+            'type': str,           # 'argument' or 'option'
+            'isShortOption': bool, # True for short options (-f), False for long options (--format)
+            'hint': str           # Optional hint about the parameter
+        }
+        """
+        if not isinstance(params, list):
+            logging.error(f"Invalid params type: {type(params)}")
+            return []
+            
         args = []
         for param in params:
             if not isinstance(param, dict):
+                logging.warning(f"Invalid param format: {param}")
                 continue
                 
             param_type = param.get('type')
-            value = param.get('value')
+            value = param.get('value', '')
+            name = param.get('name', '')
+            is_short = param.get('isShortOption', True)
             
-            if param_type == 'url':
-                args.append(value)
-            elif param_type == 'format':
-                args.extend(['-f', value])
-            elif param_type == 'output':
-                args.extend(['-o', value])
-            # Add other parameter types as needed
+            try:
+                if param_type == ParamsParser.PARAM_TYPES['argument']:
+                    if value:
+                        args.append(value)
+                elif param_type == ParamsParser.PARAM_TYPES['option']:
+                    if name:
+                        prefix = '-' if is_short else '--'
+                        option = f"{prefix}{name}"
+                        args.append(option)
+                        if value:
+                            args.append(value)
+                else:
+                    logging.warning(f"Unknown param type: {param_type}")
+            except Exception as e:
+                logging.error(f"Error parsing param {param}: {str(e)}")
+                continue
                 
+        logging.info(f"Parsed args: {args}")
         return args
 
 def get_message():

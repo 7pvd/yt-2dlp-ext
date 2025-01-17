@@ -66,16 +66,26 @@ function createDownloadButton() {
     });
     return button;
 }
-
-// Add download button after owner name
+// Add download button to YouTube page
 function addDownloadButton() {
+    const container = document.querySelector(TARGET_BUTTON);
+    if (!container || document.getElementById(BUTTON_ID)) {
+        return;
+    }
+
+    const button = createDownloadButton();
+    container.appendChild(button);
+    console.log('Download button added');
+}
+// Add download button after owner name
+function addDownloadButtonNew() {
     const ownerName = document.querySelector('#owner-name');
     if (!ownerName) return;
 
     const downloadBtn = document.createElement('button');
     downloadBtn.id = 'z2dlp-download-btn';
     downloadBtn.className = 'z2dlp-btn';
-    downloadBtn.innerHTML = '⬇️ Download';
+    downloadBtn.innerHTML = '⬇️';
     
     // Insert after owner name
     ownerName.parentNode.insertBefore(downloadBtn, ownerName.nextSibling);

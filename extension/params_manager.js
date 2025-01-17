@@ -20,19 +20,42 @@ class ParamsManager {
         OPTION: 'option'
     };
     static REQUIRED_PARAMS = ['f', 'P', 'N', 'o'];
-    static OMIT_WHEN_EMPTY = ['o'];
+    static OMIT_WHEN_EMPTY = ['o', 'P', 'N'];
 
     static getPresetOptions(preset, options = {}) {
         const presetParams = [];
-        
+        console.info('preset', preset);
+        console.info('options', options);
+
+
         // Basic preset params
         if (preset && preset.params) {
-            preset.params.forEach(param => {
-                if (!param.startsWith('-')) return;
+            for (let i = 0; i < preset.params.length; i++) {
+                const param = preset.params[i];
+                if (!param.startsWith('-')) continue;
+
+                // Handle param=value format
+                if (param.includes('=')) {
+                    const [paramName, paramValue] = param.split('=');
+                    const name = paramName.replace(/^-+/, '');
+                    const isShort = !paramName.startsWith('--');
+                    presetParams.push({ name, value: paramValue, type: 'option', isShort });
+                    continue;
+                }
+
                 const isShort = !param.startsWith('--');
                 const name = param.replace(/^-+/, '');
-                presetParams.push({ name, isShort });
-            });
+                
+                // Check next param as potential value
+                const nextParam = preset.params[i + 1];
+                const hasValue = nextParam && !nextParam.startsWith('-');
+                if (hasValue) {
+                    presetParams.push({ name, value: nextParam, type: 'option', isShort });
+                    i++; // Skip next param since we used it as value
+                } else {
+                    presetParams.push({ name, value: '', type: 'option', isShort });
+                }
+            }
         }
 
         // Additional options based on config
@@ -45,6 +68,7 @@ class ParamsManager {
         if (options.addMetadata) {
             presetParams.push({ name: 'add-metadata', isShort: false });
         }
+        console.info('presetParams', presetParams);
 
         // Filter out params that should be omitted when empty
         return presetParams.filter(param => {
@@ -85,18 +109,9 @@ class ParamsManager {
         // Get all valid options for this preset
         const presetOptions = ParamsManager.getPresetOptions(preset, options);
 
-        // Add non-option parameters (arguments)
-        if (preset.params) {
-            preset.params.forEach(param => {
-                if (!param.startsWith('-')) {
-                    this.addArgument(param);
-                }
-            });
-        }
-
         // Add all options
         presetOptions.forEach(opt => {
-            this.addOption(opt.name, '', opt.isShort);
+            this.addOption(opt.name, opt.value, opt.isShort);
         });
 
         return this;
@@ -127,7 +142,7 @@ class ParamsManager {
         // Handle additional parameters
         if (Array.isArray(config.additionalParams)) {
             config.additionalParams.forEach(param => {
-                if (param.key) {
+                if (param.key && (!ParamsManager.OMIT_WHEN_EMPTY.includes(param.key) || param.value)) {
                     this.addOption(param.key, param.value || '', true);
                 }
             });
