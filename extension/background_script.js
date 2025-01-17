@@ -184,7 +184,7 @@ async function handleCommand(command) {
 const DEFAULT_PRESETS = {
     'best': {
         name: 'Best Quality (Auto)',
-        params: ['-f', 'best'],
+        params: ['-f', 'b'],
         isBuiltin: true,
         defaultOptions: {
             embedThumbnail: false,

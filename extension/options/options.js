@@ -44,7 +44,7 @@ function showPage(pageId) {
 const DEFAULT_PRESETS = {
     'best': {
         name: 'Best Quality (Auto)',
-        params: ['-f', 'best'],
+        params: ['-f', 'b'],
         requiredParams: [
 
         ],
