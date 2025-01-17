@@ -2,6 +2,7 @@
   "manifest_version": 2,
   "name": "z2dlp - x to \"yt-dlp\" URL Forwarder",
   "version": "1.0.3",
+  "license": "CC BY-NC 4.0",
   "key": "MD8BIjANCgYJKj9IPz8NCgEBAQUAAz8BDwAwPwENCgI/AQEAPz8ZTFMfED8/K1wtIz8/dEk/P2QvDQpBBj8/Pz8/YiQ/UEQTPwcOZj8/Pz8ARj9YP3h3WWI/Zl8kPyo/Pz8/Bw0KP1M/HUw/Pz8/Pz81fj8/Aj8/Yj9rPz8/Uyttdz8qPz8DI1A/PwkNCmosPz9CPz90Pz8/P3BJeHk/Pz8/DgQ7P3g0Pz8/Uj97TkU/PzM/Pz9zPw8NCjM/Qw8CVD8/PyE/Pxl8Pz8/DQo/Pz8pKHJaXGU6ET8/Pz4/Kz9CZj9tWwg/PypFLWE/Wz8/P3ltPz8jPz8/P3dudj84PwtBFQ4/cz8sIWo/Pz90Pz8/NxACPz8/P0wGWD8/PyEnQj8/Pz8dAD8/AgMBAAENCg==",
   "description": "simple extension to forward current tab URL with custom params to `yt-dlp` command",
   "permissions": [
