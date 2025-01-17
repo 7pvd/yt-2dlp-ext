@@ -17,6 +17,7 @@
 #
 #
 #
+#
 import sys
 import json
 import struct
@@ -31,7 +32,8 @@ class ParamsParser:
     
     PARAM_TYPES = {
         'argument': 'argument',
-        'option': 'option'
+        'option': 'option',
+        'flag': 'flag'
     }
     
     @staticmethod
@@ -41,8 +43,8 @@ class ParamsParser:
         Expected param structure:
         {
             'name': str,           # Option name without prefix
-            'value': str,          # Option value or argument value
-            'type': str,           # 'argument' or 'option'
+            'value': str|bool,     # Option value, argument value, or true for flags
+            'type': str,           # 'argument', 'option', or 'flag'
             'isShortOption': bool, # True for short options (-f), False for long options (--format)
             'hint': str           # Optional hint about the parameter
         }
@@ -66,13 +68,18 @@ class ParamsParser:
                 if param_type == ParamsParser.PARAM_TYPES['argument']:
                     if value:
                         args.append(value)
+                elif param_type == ParamsParser.PARAM_TYPES['flag']:
+                    if name:
+                        prefix = '-' if is_short else '--'
+                        option = f"{prefix}{name}"
+                        args.append(option)
                 elif param_type == ParamsParser.PARAM_TYPES['option']:
                     if name:
                         prefix = '-' if is_short else '--'
                         option = f"{prefix}{name}"
                         args.append(option)
                         if value:
-                            args.append(value)
+                            args.append(str(value))
                 else:
                     logging.warning(f"Unknown param type: {param_type}")
             except Exception as e:
@@ -159,7 +166,7 @@ def handle_download(data):
             
         # Execute yt-dlp command
         cmd = ['yt-dlp'] + args
-        logging.info(f"Executing command: {cmd}")
+        logging.info(f"Executing command: {' '.join(cmd)}")
         
         result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8')
         

@@ -17,7 +17,8 @@
 class ParamsManager {
     static PARAM_TYPES = {
         ARGUMENT: 'argument',
-        OPTION: 'option'
+        OPTION: 'option',
+        FLAG: 'flag', // flag is a boolean option
     };
     static REQUIRED_PARAMS = ['f', 'P', 'N', 'o'];
     static OMIT_WHEN_EMPTY = ['o', 'P', 'N'];
@@ -39,7 +40,12 @@ class ParamsManager {
                     const [paramName, paramValue] = param.split('=');
                     const name = paramName.replace(/^-+/, '');
                     const isShort = !paramName.startsWith('--');
-                    presetParams.push({ name, value: paramValue, type: 'option', isShort });
+                    presetParams.push({ 
+                        name, 
+                        value: paramValue, 
+                        type: ParamsManager.PARAM_TYPES.OPTION, 
+                        isShort 
+                    });
                     continue;
                 }
 
@@ -49,11 +55,23 @@ class ParamsManager {
                 // Check next param as potential value
                 const nextParam = preset.params[i + 1];
                 const hasValue = nextParam && !nextParam.startsWith('-');
+                
                 if (hasValue) {
-                    presetParams.push({ name, value: nextParam, type: 'option', isShort });
+                    presetParams.push({ 
+                        name, 
+                        value: nextParam, 
+                        type: ParamsManager.PARAM_TYPES.OPTION, 
+                        isShort 
+                    });
                     i++; // Skip next param since we used it as value
                 } else {
-                    presetParams.push({ name, value: '', type: 'option', isShort });
+                    // Treat as flag if no value
+                    presetParams.push({ 
+                        name, 
+                        value: true, 
+                        type: ParamsManager.PARAM_TYPES.FLAG, 
+                        isShort 
+                    });
                 }
             }
         }
@@ -79,8 +97,8 @@ class ParamsManager {
         });
     }
 
-    constructor() {
-        this.params = [];
+    constructor(params = []) {
+        this.params = params;
     }
 
     addArgument(value) {
@@ -178,6 +196,68 @@ class ParamsManager {
             console.error('Failed to parse params JSON:', e);
         }
         return manager;
+    }
+
+    static fromCommandString(commandString) {
+        // Remove 'yt-dlp' if present and trim spaces
+        const cleanCommand = commandString.replace(/^yt-dlp\s+/, '').trim();
+        
+        // Split the command string while preserving quoted values
+        const splitCommand = cleanCommand.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
+        
+        const params = [];
+        for (let i = 0; i < splitCommand.length; i++) {
+            let current = splitCommand[i];
+            
+            // Skip if not an option/flag
+            if (!current.startsWith('-')) continue;
+            
+            // Remove quotes if present
+            current = current.replace(/^"(.*)"$/, '$1');
+            
+            // Handle param=value format
+            if (current.includes('=')) {
+                const [paramName, paramValue] = current.split('=');
+                const name = paramName.replace(/^-+/, '');
+                const isShort = !paramName.startsWith('--');
+                params.push({
+                    name,
+                    value: paramValue,
+                    type: ParamsManager.PARAM_TYPES.OPTION,
+                    isShort
+                });
+                continue;
+            }
+
+            const isShort = !current.startsWith('--');
+            const name = current.replace(/^-+/, '');
+            
+            // Check next parameter as potential value
+            const nextParam = splitCommand[i + 1];
+            const hasValue = nextParam && !nextParam.startsWith('-');
+            
+            if (hasValue) {
+                // Remove quotes from value if present
+                const value = nextParam.replace(/^"(.*)"$/, '$1');
+                params.push({
+                    name,
+                    value,
+                    type: ParamsManager.PARAM_TYPES.OPTION,
+                    isShort
+                });
+                i++; // Skip next param since we used it as value
+            } else {
+                // Treat as flag if no value
+                params.push({
+                    name,
+                    value: true,
+                    type: ParamsManager.PARAM_TYPES.FLAG,
+                    isShort
+                });
+            }
+        }
+        
+        return new ParamsManager(params);
     }
 }
 

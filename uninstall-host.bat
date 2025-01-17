@@ -26,12 +26,12 @@ call :log "  Local AppData: %LOCALAPPDATA%"
 call :log "Checking for administrator privileges..."
 net session >nul 2>&1
 if %errorLevel% neq 0 (
-    call :log "ERROR: Script requires administrator privileges"
     echo This script requires administrator privileges.
     echo Please run as administrator.
-    timeout /t 5
-    exit /b 1
-) else (
+    call :log "INFO: Restarting script with Administrator privileges..."
+    powershell -Command "Start-Process '%~0' -Verb RunAs"
+    exit /b
+)else (
     call :log "SUCCESS: Running with administrator privileges"
 )
 
@@ -148,4 +148,4 @@ exit /b 0
 :log
 echo %DATE% %TIME% - %~1
 echo %DATE% %TIME% - %~1 >> "%LOGFILE%"
-exit /b 0 
+exit /b 0
